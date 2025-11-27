@@ -300,17 +300,8 @@ class SectionWriter(FormatterMixin):
         p2.style.font.size = Pt(12)
 
         # ПОСЕЩАЕМОСТЬ
+        # замена NaN-значений на 0
         self.cur_rk_df.fillna(0)
-
-        # max_item = cur_rk_data.iloc[cur_rk_data[1:].views.idxmax()]
-        # min_item = cur_rk_data.iloc[cur_rk_data[1:].views.idxmin()]
-        # p2_1 = document.add_paragraph(style='List Bullet')
-        # p2_1.add_run(f'Выполнили действие {max_item.action} {number_formatter(max_item.views)} пользователей, '
-        #              f'что составляет {(max_item.views / cur_rk_data.iloc[0].views) * 100} % от общего ')
-        #
-        # print(cur_rk_data[1:].views.idxmax())
-        # print(cur_rk_data.iloc[3])
-
         for i in range(1, len(self.cur_rk_df)):
             item = self.cur_rk_df.iloc[i].replace(np.nan, 0)
             p = self.document.add_paragraph(style='List Bullet')
@@ -354,6 +345,10 @@ class SectionWriter(FormatterMixin):
                 blocks_dict[block_name].append(action)
 
         colors = ["#a9d18e", "#ffc000", "#ed7d31", "#5b9bd5", "#4472c4"]
+        if not [1 for item in blocks_dict.values() if len(item) > 2]:
+            picture.paragraph_format.left_indent = Inches(0.5)
+            picture.add_run('Недостаточно данных для построения диаграмм.').italic = True
+            return
 
         for action in blocks_dict:
             if len(blocks_dict[action]) >= 2:
@@ -390,13 +385,16 @@ class SectionWriter(FormatterMixin):
                 picture.add_run().add_picture(img, width=Cm(16.2), height=Cm(10.8))
 
     def write_items_by_outliers(self, min_items_num: int, df: pd.DataFrame, label: str, is_campaign: bool,
-                                write_best: bool = True):
-        pos_outliers, normal, neg_outliers = self.get_outliers_rows(df, label, is_campaigns=is_campaign)
+                                outlier_rate: float, write_best: bool = True):
+        pos_outliers, normal, neg_outliers = self.get_outliers_rows(df, label, is_campaigns=is_campaign,
+                                                                    outliers_rate=outlier_rate)
         pos_outliers_perc_abort, normal_perc_abort, neg_outliers_perc_abort = self.get_outliers_rows(df,
                                                                                                      'perc_aborted',
-                                                                                                     is_campaigns=is_campaign)
-        pos_outliers_time, normal_time, neg_outliers_time = self.get_outliers_rows(df, 'time', is_campaigns=is_campaign)
-
+                                                                                                     is_campaigns=is_campaign,
+                                                                                                     outliers_rate=outlier_rate)
+        pos_outliers_time, normal_time, neg_outliers_time = self.get_outliers_rows(df, 'time', is_campaigns=is_campaign,
+                                                                                   outliers_rate=outlier_rate)
+        print(pos_outliers, label)
         if write_best:
             cur_outliers = pos_outliers
             normal = normal.sort_values(by=label, ascending=False)
@@ -446,7 +444,7 @@ class SectionWriter(FormatterMixin):
                 p = self.document.add_paragraph(style='List Bullet')
                 p.paragraph_format.left_indent = Inches(1)
                 p.add_run(
-                    f'«{item.action}» ({self.number_formatter(item[label])} {self.end_word_formatter(label, item[label])}) (выброс).')
+                    f'«{item.action}» ({self.number_formatter(item[label])} {self.end_word_formatter(label, item[label])}).')
 
                 # проверка на высокие показатели отказов + время
                 if item.action in pos_outliers_perc_abort.action.values:
@@ -474,7 +472,7 @@ class SectionWriter(FormatterMixin):
                     p.add_run(
                         f' Так же, стоит отметить, что данное действие имеет малое время просмотра ({item.time}).')
 
-    def write_outliers_section(self):
+    def write_outliers_section(self, outlier_rate: float):
         self.document.add_paragraph(f'Анализ выбросов по действиям:', style='List Number')
         self.document.add_paragraph(
             'Наибольшее число визитов включают действия:').paragraph_format.left_indent = Inches(0.5)
@@ -483,13 +481,15 @@ class SectionWriter(FormatterMixin):
         min_items_count = math.ceil(len(self.cur_rk_df) * 0.25)
 
         # записываем наибольшие по визитам строки
-        self.write_items_by_outliers(min_items_count, self.cur_rk_df, 'visits', is_campaign=False)
+        self.write_items_by_outliers(min_items_count, self.cur_rk_df, 'visits', is_campaign=False,
+                                     outlier_rate=outlier_rate)
 
         self.document.add_paragraph(
             'Наименьшее число визитов включают действия:').paragraph_format.left_indent = Inches(0.5)
-        self.write_items_by_outliers(min_items_count, self.cur_rk_df, 'visits', is_campaign=False, write_best=False)
+        self.write_items_by_outliers(min_items_count, self.cur_rk_df, 'visits', is_campaign=False, write_best=False,
+                                     outlier_rate=outlier_rate)
 
-    def write_groups_section(self):
+    def write_groups_section(self, outlier_rate: float):
         self.document.add_paragraph(f'Группы:', style='List Number')
         if len(self.groups_df) == 2:
             p = self.document.add_paragraph(style='List Bullet')
@@ -520,23 +520,28 @@ class SectionWriter(FormatterMixin):
 
             self.document.add_paragraph('Лучшие показатели посещаемости демонстируют следующие группы: ',
                                         style='List Bullet')
-            self.write_items_by_outliers(min_items_count, self.groups_df, 'views', is_campaign=False, write_best=True)
+            self.write_items_by_outliers(min_items_count, self.groups_df, 'views', is_campaign=False, write_best=True,
+                                         outlier_rate=outlier_rate)
 
             self.document.add_paragraph('Худшие показатели посещаемости демонстируют следующие группы: ',
                                         style='List Bullet')
-            self.write_items_by_outliers(min_items_count, self.groups_df, 'views', is_campaign=False, write_best=False)
+            self.write_items_by_outliers(min_items_count, self.groups_df, 'views', is_campaign=False, write_best=False,
+                                         outlier_rate=outlier_rate)
 
         min_items_count = math.ceil(len(self.campaigns_df) * 0.25)
 
         self.document.add_paragraph('Лучшие показатели посещаемости демонстрируют кампании:', style='List Bullet')
-        self.write_items_by_outliers(min_items_count, self.campaigns_df, 'views', is_campaign=True)
+        self.write_items_by_outliers(min_items_count, self.campaigns_df, 'views', is_campaign=True,
+                                     outlier_rate=outlier_rate)
 
         self.document.add_paragraph('Худшие показатели посещаемости у следующих кампаний:', style='List Bullet')
-        self.write_items_by_outliers(min_items_count, self.campaigns_df, 'views', is_campaign=True, write_best=False)
+        self.write_items_by_outliers(min_items_count, self.campaigns_df, 'views', is_campaign=True, write_best=False,
+                                     outlier_rate=outlier_rate)
 
 
 class ReportGenerator(FormatterMixin):
-    def __init__(self, header, cur_rk_path, org_path, groups_path, campaigns_path, prev_rk_path=None):
+    def __init__(self, header, cur_rk_path, org_path, groups_path, campaigns_path, prev_rk_path=None,
+                 outlier_rate: float = 1.5):
         self.document = Document()
         self.general_writer = SectionWriter(self.document, cur_rk_path, org_path, prev_rk_path, groups_path,
                                             campaigns_path)
@@ -544,6 +549,8 @@ class ReportGenerator(FormatterMixin):
         self.cur_rk_path = cur_rk_path
         self.prev_rk_path = prev_rk_path
         self.org_path = org_path
+
+        self.outlier_rate = outlier_rate
 
         self.write_header(header)
         # self.write_general_params()
@@ -586,18 +593,18 @@ class ReportGenerator(FormatterMixin):
         self.general_writer.write_funnel_graph_section()
 
     def write_outliers_section(self):
-        self.general_writer.write_outliers_section()
+        self.general_writer.write_outliers_section(self.outlier_rate)
 
     def write_groups_section(self):
-        self.general_writer.write_groups_section()
+        self.general_writer.write_groups_section(self.outlier_rate)
 
     def save_report(self, doc_name: str = 'test_report'):
         self.document.save(doc_name + '.docx')
 
 
-report = ReportGenerator('Моя кампания', 'teatri_vov_um/Текущая РК.csv', 'teatri_vov_um/Органический трафик.csv',
-                         'teatri_vov_um/Группы по типу РК.csv', 'teatri_vov_um/Все кампании.csv',
-                         prev_rk_path='teatri_vov_um/Предыдущая РК.csv')
+report = ReportGenerator('Моя кампания', 'old_data/Текущая РК.csv', 'old_data/Органический трафик.csv',
+                         'old_data/Группы по типу РК.csv', 'old_data/Все кампании.csv',
+                         prev_rk_path='old_data/Предыдущая РК.csv', outlier_rate=52)
 report.write_general_params()
 report.write_page_views()
 report.write_funnel_graph_section()
