@@ -15,8 +15,19 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_BREAK
 
 
 class FormatterMixin:
+    """
+    Класс-миксин для предоставления методов форматирования различных типов данных
+    """
+
     @staticmethod
-    def great_or_less_string(a: int | float | np.int64 | datetime.time, b: int | float | np.int64 | datetime.time):
+    def great_or_less_string(a: int | float | np.int64 | datetime.time,
+                             b: int | float | np.int64 | datetime.time) -> str:
+        """
+        Метод для генерирования строки, информирующей о том больше или меньше параметр a параметра b
+        :param a: левый операнд
+        :param b: правый операнд
+        :return: строку больше|меньше|значительно/незначительно больше|значительно/незначительно меньше
+        """
         state_flags = ['больше', 'меньше']
         ind = bool(a < b)
         if isinstance(a, int | float | np.int64) and isinstance(b, int | float | np.int64):
@@ -37,7 +48,13 @@ class FormatterMixin:
             return state_flags[ind]
 
     @staticmethod
-    def great_or_less_range(a: int | float, b: int | float):
+    def great_or_less_range(a: int | float, b: int | float) -> str:
+        """
+        Метод проверяет во сколько раз больше (меньше) параметр a параметра b
+        :param a: левый операнд
+        :param b: правый операнд
+        :return: str - в N раз больше
+        """
         if isinstance(a, int | float) and isinstance(b, int | float):
             data = (a, b)
         elif isinstance(a, datetime.time) and isinstance(b, datetime.time):
@@ -58,7 +75,7 @@ class FormatterMixin:
     @staticmethod
     def get_outliers_rows(df: pd.DataFrame, label: str, outliers_rate: int | float = 1.5, is_campaigns=False):
         """
-        Функция получает строки с выбросами в определенных столбцах DataFrame помеченных label
+        Метод получает строки с выбросами в определенных столбцах (label) из DataFrame
         :param df: объект DataFrame (данные из csv-файла)
         :param label: метка столбца, по которому происходит поиск выбросов
         :return: объект DataFrame, содержащий строки с наличием выбросов в столбце label
@@ -70,7 +87,7 @@ class FormatterMixin:
         # переводим время в число для сравнения
         df.time = df.time.apply(lambda t: (t.hour * 60 + t.minute) * 60 + t.second)
         # квартили распределения
-        # если количество элементов больше 2 ищем квартиль на основе среднего по выборке
+        # если количество элементов больше 2 ищем квартиль на основе медиан
         if len(df[label]) > 2:
             quantiles = df[label].quantile([0.25, 0.50, 0.75], interpolation='midpoint')
         # иначе используем метод по умолчанию (linear)
@@ -93,17 +110,33 @@ class FormatterMixin:
         return pos_outliers, normal_distribution, neg_outliers
 
     @staticmethod
-    def number_formatter(num):
+    def number_formatter(num) -> str:
+        """
+        Метод форматирует число разделяя разрядность пробелами
+        :param num:
+        :return:
+        """
         return f"{num:,}".replace(",", " ")
 
     @staticmethod
     def time_to_str(time: datetime.time):
+        """
+        Метод форматирует объект datetime.time в удобочитаемую строку
+        :param time:
+        :return:
+        """
         if time.hour:
             return time.strftime('%H:%M:%S')
         return time.strftime('%M:%S')
 
     @staticmethod
-    def end_word_formatter(word, number):
+    def end_word_formatter(word: str, number: int) -> str:
+        """
+        Метод форматирует окончание слова в зависимости от числа
+        :param word: маркер слова и объектов label
+        :param number: число, в соотвествие с которым необходимо форматировать окончание
+        :return:
+        """
         forms = {
             'visits': ['визит', 'визита', 'визитов'],
             'views': ['посетитель', 'посетителя', 'посетителей']
@@ -120,6 +153,9 @@ class FormatterMixin:
 
 
 class Data:
+    """
+    Класс для считывания и первичного форматирования данных из csv-файлов
+    """
     def __init__(self, cur_rk_path, org_path, prev_rk_path, groups_path, campaign_path):
         self.RK_LABELS = ['action', 'views', 'conv_views', 'visits', 'conv_visits', 'aborted', 'perc_aborted', 'depth',
                           'time',
@@ -127,20 +163,25 @@ class Data:
         self.CAMPAIGN_LABELS = ['action', 'views', 'visits', 'aborted', 'perc_aborted', 'depth', 'time',
                                 'new_users_with_abort', 'perc_new_users_with_abort', 'new_users', 'perc_new_users']
         self.ORG_LABELS = ['serivce', 'views', 'visists', 'perc_aborted', 'depth', 'time', 'perc_new_users']
-        self.cur_rk_df = self.read_rk_csv(cur_rk_path, self.RK_LABELS)
-        self.org_df = self.read_org_csv(org_path, self.ORG_LABELS)
-        self.prev_rk_df = self.read_rk_csv(prev_rk_path, self.RK_LABELS)
+        self.cur_rk_df = self.read_rk_csv(cur_rk_path)
+        self.org_df = self.read_org_csv(org_path)
+        self.prev_rk_df = self.read_rk_csv(prev_rk_path)
         self.groups_df = self.read_campaign_csv(groups_path)
         self.campaigns_df = self.read_campaign_csv(campaign_path)
 
-    def read_rk_csv(self, filename: path, rk_labels: list[str]):
+    def read_rk_csv(self, filename: path):
+        """
+        Чтение данных из csv формата RK_LABELS
+        :param filename: путь к файлу
+        :return: объект pandas.DataFrame
+        """
         if not filename or not os.path.exists(filename):
             return pd.DataFrame()
 
         rk_df = pd.read_csv(filename)
-        if len(rk_df.values[0]) != len(rk_labels):
+        if len(rk_df.values[0]) != len(self.RK_LABELS):
             return pd.DataFrame()
-        rk_df.columns = rk_labels
+        rk_df.columns = self.RK_LABELS
 
         rk_df.conv_views = pd.to_numeric(rk_df.conv_views)
         rk_df.conv_views = rk_df.conv_views.apply(self.percent_formatter)
@@ -156,9 +197,14 @@ class Data:
 
         return rk_df
 
-    def read_org_csv(self, filename: path, org_labels: list[str]):
+    def read_org_csv(self, filename: path):
+        """
+        Чтение данных из csv формата ORG_LABELS
+        :param filename: путь к файлу
+        :return: объект pandas.DataFrame
+        """
         org_df = pd.read_csv(filename)
-        org_df.columns = org_labels
+        org_df.columns = self.ORG_LABELS
         org_df.perc_aborted = org_df.perc_aborted.apply(self.percent_formatter)
         org_df.depth = org_df.depth.apply(self.float_formatter)
         org_df.time = org_df.time.apply(self.str_to_time)
@@ -167,6 +213,11 @@ class Data:
         return org_df
 
     def read_campaign_csv(self, filename: path):
+        """
+        Чтение данных из csv формата CAMPAIGN_LABELS
+        :param filename: путь к файлу
+        :return: объект pandas.DataFrame
+        """
         if os.path.exists(filename):
             campaign_df = pd.read_csv(filename)
             campaign_df.columns = self.CAMPAIGN_LABELS
@@ -181,18 +232,36 @@ class Data:
 
     @staticmethod
     def percent_formatter(num):
+        """
+        Метод форматирует дробные числа в проценты
+        :param num:
+        :return:
+        """
         return round(float(num) * 100, 2)
 
     @staticmethod
     def str_to_time(t):
+        """
+        Метод форматирует строку, соответствующего формата в объект datetime.time
+        :param t:
+        :return:
+        """
         return datetime.datetime.strptime(t, '%H:%M:%S').time()
 
     @staticmethod
     def float_formatter(num):
+        """
+        Метод форматирует float-числа до 2 знаков после запятой
+        :param num:
+        :return:
+        """
         return round(float(num), 2)
 
 
 class SectionWriter(FormatterMixin):
+    """
+    Класс для записи пунктов в формирующийся документ (отчёт)
+    """
     def __init__(self, document, cur_rk_df, org_df, prev_rk_df, groups_path, campaigns_path):
         self.document = document
 
@@ -295,6 +364,10 @@ class SectionWriter(FormatterMixin):
                                 f'органике ({org_perc_new_users} %).')
 
     def write_page_views_section(self):
+        """
+        Данные посещаемости страниц
+        :return:
+        """
         p2 = self.document.add_paragraph('Посещение страниц:', style='List Number')
         p2.paragraph_format.line_spacing = 1.5
         p2.style.font.size = Pt(12)
@@ -329,6 +402,10 @@ class SectionWriter(FormatterMixin):
                 p.add_run('посещений не зафиксировано.')
 
     def write_funnel_graph_section(self):
+        """
+        Графики-воронки выполнения целевых действий
+        :return:
+        """
         p3 = self.document.add_paragraph()
         p3.add_run().add_break(WD_BREAK.PAGE)
         p3 = self.document.add_paragraph(f'Диаграммы выполнения целевых действий:', style='List Number')
@@ -386,6 +463,16 @@ class SectionWriter(FormatterMixin):
 
     def write_items_by_outliers(self, min_items_num: int, df: pd.DataFrame, label: str, is_campaign: bool,
                                 outlier_rate: float, write_best: bool = True):
+        """
+        Метод для формирования групп (пунктов) 'наибольшие/наименьшие' параметры для действий или кампаний
+        :param min_items_num: минимальное количество элементов в каждой из групп
+        :param df: DataFrame на основе которого отбираются данные
+        :param label: метка столбца, на основе которого отбираются данные
+        :param is_campaign: флаг, сигнализирующий на основе какой сущности происходит отбор
+        :param outlier_rate: множитель, отвечающий за величину отклонения данных, которые будут считаться выбросом
+        :param write_best: флаг, сигнализирующий о виде искомых групп (наибольшие или наименьшие)
+        :return: None
+        """
         pos_outliers, normal, neg_outliers = self.get_outliers_rows(df, label, is_campaigns=is_campaign,
                                                                     outliers_rate=outlier_rate)
         pos_outliers_perc_abort, normal_perc_abort, neg_outliers_perc_abort = self.get_outliers_rows(df,
@@ -474,6 +561,11 @@ class SectionWriter(FormatterMixin):
                         f' Так же, стоит отметить, что данное действие имеет малое время просмотра ({item.time}).')
 
     def write_outliers_section(self, outlier_rate: float):
+        """
+        Данные с анализом выбросов (если есть) в видеть наибольших или наименьших значений
+        :param outlier_rate: множитель, отвечающий за величину отклонения данных, которые будут считаться выбросом
+        :return:
+        """
         self.document.add_paragraph(f'Анализ выбросов по действиям:', style='List Number')
         self.document.add_paragraph(
             'Наибольшее число визитов включают действия:').paragraph_format.left_indent = Inches(0.5)
@@ -491,6 +583,11 @@ class SectionWriter(FormatterMixin):
                                      outlier_rate=outlier_rate)
 
     def write_groups_section(self, outlier_rate: float):
+        """
+        данные с анализом групп, кампаний. Анализ схожий с пунктом write_outliers_section
+        :param outlier_rate:
+        :return:
+        """
         self.document.add_paragraph(f'Группы:', style='List Number')
         if len(self.groups_df) == 2:
             p = self.document.add_paragraph(style='List Bullet')
@@ -541,8 +638,22 @@ class SectionWriter(FormatterMixin):
 
 
 class ReportGenerator(FormatterMixin):
+    """
+    Класс для управления формированием файла, создаёт объект документа, принимает пути к файлам с данными
+    управляет записью пунктов в документ
+    """
     def __init__(self, header, cur_rk_path, org_path, groups_path, campaigns_path, prev_rk_path=None,
                  outlier_rate: float = 1.5):
+        """
+
+        :param header: заголовок документа
+        :param cur_rk_path: путь к файлу Текущая РК
+        :param org_path: путь к файлу Органический трафик
+        :param groups_path: путь к файлу с данными о группах
+        :param campaigns_path: путь к файлу с данными о кампаниях
+        :param prev_rk_path: путь к файлу с данными предыдущей РК
+        :param outlier_rate: множитель, отвечающий за величину отклонения данных, которые будут считаться выбросом
+        """
         self.document = Document()
         self.general_writer = SectionWriter(self.document, cur_rk_path, org_path, prev_rk_path, groups_path,
                                             campaigns_path)
@@ -584,18 +695,39 @@ class ReportGenerator(FormatterMixin):
         self.general_writer.write_general_section()
 
     def write_page_views(self):
+        """
+        Просмотр страниц
+        :return:
+        """
         self.general_writer.write_page_views_section()
 
     def write_funnel_graph_section(self):
+        """
+        Графики-воронки
+        :return:
+        """
         self.general_writer.write_funnel_graph_section()
 
     def write_outliers_section(self):
+        """
+        Анализ выбросов, наилучших и наихудших параметров для действий
+        :return:
+        """
         self.general_writer.write_outliers_section(self.outlier_rate)
 
     def write_groups_section(self):
+        """
+        Анализ выбросов, наилучших и наихудших параметров для групп/кампаний
+        :return:
+        """
         self.general_writer.write_groups_section(self.outlier_rate)
 
     def save_report(self, doc_name: str = 'test_report'):
+        """
+        Сохранение файла отчёта
+        :param doc_name: имя выходного файла
+        :return: None
+        """
         self.document.save(doc_name + '.docx')
 
 
