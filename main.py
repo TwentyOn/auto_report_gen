@@ -394,7 +394,6 @@ class SectionWriter(FormatterMixin):
                                                                                                      outliers_rate=outlier_rate)
         pos_outliers_time, normal_time, neg_outliers_time = self.get_outliers_rows(df, 'time', is_campaigns=is_campaign,
                                                                                    outliers_rate=outlier_rate)
-        print(pos_outliers, label)
         if write_best:
             cur_outliers = pos_outliers
             normal = normal.sort_values(by=label, ascending=False)
@@ -419,24 +418,26 @@ class SectionWriter(FormatterMixin):
                 p.add_run(
                     f' Так же, стоит отметить, что данное действие имеет относительно большую долю отказов ({item.perc_aborted} %).')
                 if item.action in pos_outliers_time.action.values:
-                    p.add_run(f' Но высокое время просмотра ({item.time}).')
+                    p.add_run(f' Но, так же, относительно большее время просмотра ({item.time}).')
                 elif item.action in pos_outliers_time.action.values:
-                    p.add_run(f' И малое время просмотра ({item.time}).')
+                    p.add_run(f' И относительно малое время просмотра ({item.time}).')
 
             # проверка на низкие показатели отказов + время
             elif item.action in neg_outliers_perc_abort.action.values:
                 p.add_run(
                     f' Так же, стоит отметить, что данное действие имеет относительно малую долю отказов ({item.perc_aborted} %).')
                 if item.action in pos_outliers_time.action.values:
-                    p.add_run(f' И высокое время просмотра ({item.time}).')
+                    p.add_run(f' И относительно большое время просмотра ({item.time}).')
                 elif item.action in pos_outliers_time.action.values:
-                    p.add_run(f' Но малое время просмотра ({item.time}).')
+                    p.add_run(f' Но относительно малое время просмотра ({item.time}).')
 
             # если отказыв в пределах нормы, ищем выбросы для данного действия по времени
             elif item.action in pos_outliers_time.action.values:
-                p.add_run(f' Так же, стоит отметить, что данное действие имеет высокое время просмотра ({item.time}).')
+                p.add_run(
+                    f' Так же, стоит отметить, что данное действие имеет относительно большое время просмотра ({item.time}).')
             elif item.action in neg_outliers_time.action.values:
-                p.add_run(f' Так же, стоит отметить, что данное действие имеет малое время просмотра ({item.time}).')
+                p.add_run(
+                    f' Так же, стоит отметить, что данное действие имеет относительно малое время просмотра ({item.time}).')
 
         if num_items < min_items_num:
             for i in range(len(normal[:min_items_num - num_items])):
@@ -451,23 +452,23 @@ class SectionWriter(FormatterMixin):
                     p.add_run(
                         f' Так же, стоит отметить, что данное действие имеет относительно большую долю отказов ({item.perc_aborted} %).')
                     if item.action in pos_outliers_time.action.values:
-                        p.add_run(f' Но высокое время просмотра ({item.time}).')
+                        p.add_run(f' Но относительно большее время просмотра ({item.time}).')
                     elif item.action in pos_outliers_time.action.values:
-                        p.add_run(f' И малое время просмотра ({item.time}).')
+                        p.add_run(f' И относительно малое время просмотра ({item.time}).')
 
                 # проверка на низкие показатели отказов + время
                 elif item.action in neg_outliers_perc_abort.action.values:
                     p.add_run(
                         f' Так же, стоит отметить, что данное действие имеет относительно малую долю отказов ({item.perc_aborted} %).')
                     if item.action in pos_outliers_time.action.values:
-                        p.add_run(f' И высокое время просмотра ({item.time}).')
+                        p.add_run(f' И большее, относительно других действий, время просмотра ({item.time}).')
                     elif item.action in pos_outliers_time.action.values:
-                        p.add_run(f' Но малое время просмотра ({item.time}).')
+                        p.add_run(f' Но малое, относительно других действий, время просмотра ({item.time}).')
 
                 # если отказыв в пределах нормы, ищем выбросы для данного действия по времени
                 elif item.action in pos_outliers_time.action.values:
                     p.add_run(
-                        f' Так же, стоит отметить, что данное действие имеет высокое время просмотра ({item.time}).')
+                        f' Так же, стоит отметить, что данное действие имеет большое время просмотра ({item.time}).')
                 elif item.action in neg_outliers_time.action.values:
                     p.add_run(
                         f' Так же, стоит отметить, что данное действие имеет малое время просмотра ({item.time}).')
@@ -546,10 +547,6 @@ class ReportGenerator(FormatterMixin):
         self.general_writer = SectionWriter(self.document, cur_rk_path, org_path, prev_rk_path, groups_path,
                                             campaigns_path)
 
-        self.cur_rk_path = cur_rk_path
-        self.prev_rk_path = prev_rk_path
-        self.org_path = org_path
-
         self.outlier_rate = outlier_rate
 
         self.write_header(header)
@@ -602,9 +599,9 @@ class ReportGenerator(FormatterMixin):
         self.document.save(doc_name + '.docx')
 
 
-report = ReportGenerator('Моя кампания', 'old_data/Текущая РК.csv', 'old_data/Органический трафик.csv',
-                         'old_data/Группы по типу РК.csv', 'old_data/Все кампании.csv',
-                         prev_rk_path='old_data/Предыдущая РК.csv', outlier_rate=52)
+report = ReportGenerator('Моя кампания', 'teatri_vov_um/Текущая РК.csv', 'teatri_vov_um/Органический трафик.csv',
+                         'teatri_vov_um/Группы по типу РК.csv', 'teatri_vov_um/Все кампании.csv',
+                         prev_rk_path='teatri_vov_um/Предыдущая РК.csv', outlier_rate=1.5)
 report.write_general_params()
 report.write_page_views()
 report.write_funnel_graph_section()
