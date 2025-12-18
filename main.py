@@ -500,7 +500,7 @@ class SectionWriter(FormatterMixin):
             p = self.document.add_paragraph(style='List Bullet')
             p.paragraph_format.left_indent = Inches(1)
             p.add_run(
-                f'«{item.action}» ({self.number_formatter(item[label])} {self.end_word_formatter(label, item[label])}).') # выброс
+                f'«{item.action}» ({self.number_formatter(item[label])} {self.end_word_formatter(label, item[label])}).')  # выброс
 
             # проверка на высокие показатели отказов + время
             if item.action in pos_outliers_perc_abort.action.values:
@@ -645,8 +645,8 @@ class ReportGenerator(FormatterMixin):
     управляет записью пунктов в документ
     """
 
-    def __init__(self, header, cur_rk_path, org_path, groups_path, campaigns_path, prev_rk_path=None,
-                 outlier_rate: float = 1.5):
+    def __init__(self, header: str, cur_rk_path: str, org_path: str, groups_path: str, campaigns_path: str,
+                 prev_rk_path: str = None, outlier_rate: float = 1.5):
         """
 
         :param header: заголовок документа
