@@ -1,9 +1,5 @@
 *__pycache/
-
-test.py
-456.py
+.idea
 
 # файлы кэша для docx
 ~$*
-
-.idea
