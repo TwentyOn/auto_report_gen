@@ -156,6 +156,7 @@ class Data:
     """
     Класс для считывания и первичного форматирования данных из csv-файлов
     """
+
     def __init__(self, cur_rk_path, org_path, prev_rk_path, groups_path, campaign_path):
         self.RK_LABELS = ['action', 'views', 'conv_views', 'visits', 'conv_visits', 'aborted', 'perc_aborted', 'depth',
                           'time',
@@ -262,6 +263,7 @@ class SectionWriter(FormatterMixin):
     """
     Класс для записи пунктов в формирующийся документ (отчёт)
     """
+
     def __init__(self, document, cur_rk_df, org_df, prev_rk_df, groups_path, campaigns_path):
         self.document = document
 
@@ -374,7 +376,7 @@ class SectionWriter(FormatterMixin):
 
         # ПОСЕЩАЕМОСТЬ
         # замена NaN-значений на 0
-        self.cur_rk_df.fillna(0)
+        # self.cur_rk_df.fillna(0)
         for i in range(1, len(self.cur_rk_df)):
             item = self.cur_rk_df.iloc[i].replace(np.nan, 0)
             p = self.document.add_paragraph(style='List Bullet')
@@ -498,7 +500,7 @@ class SectionWriter(FormatterMixin):
             p = self.document.add_paragraph(style='List Bullet')
             p.paragraph_format.left_indent = Inches(1)
             p.add_run(
-                f'«{item.action}» ({self.number_formatter(item[label])} {self.end_word_formatter(label, item[label])}) (выброс).')
+                f'«{item.action}» ({self.number_formatter(item[label])} {self.end_word_formatter(label, item[label])}).') # выброс
 
             # проверка на высокие показатели отказов + время
             if item.action in pos_outliers_perc_abort.action.values:
@@ -642,6 +644,7 @@ class ReportGenerator(FormatterMixin):
     Класс для управления формированием файла, создаёт объект документа, принимает пути к файлам с данными
     управляет записью пунктов в документ
     """
+
     def __init__(self, header, cur_rk_path, org_path, groups_path, campaigns_path, prev_rk_path=None,
                  outlier_rate: float = 1.5):
         """
@@ -722,21 +725,32 @@ class ReportGenerator(FormatterMixin):
         """
         self.general_writer.write_groups_section(self.outlier_rate)
 
-    def save_report(self, doc_name: str = 'test_report'):
+    def save_report(self, doc_name: str = 'auto_report'):
         """
         Сохранение файла отчёта
         :param doc_name: имя выходного файла
         :return: None
         """
-        self.document.save(doc_name + '.docx')
+        self.document.save(doc_name)
 
 
-report = ReportGenerator('Моя кампания', 'teatri_vov_um/Текущая РК.csv', 'teatri_vov_um/Органический трафик.csv',
-                         'teatri_vov_um/Группы по типу РК.csv', 'teatri_vov_um/Все кампании.csv',
-                         prev_rk_path='teatri_vov_um/Предыдущая РК.csv', outlier_rate=1.5)
+# объект для управления записью отчёта
+report = ReportGenerator('Моя кампания', 'data/teatri_vov_um/Текущая РК.csv',
+                         'data/teatri_vov_um/Органический трафик.csv',
+                         'data/teatri_vov_um/Группы по типу РК.csv', 'data/teatri_vov_um/Все кампании.csv',
+                         prev_rk_path='data/teatri_vov_um/Предыдущая РК.csv', outlier_rate=1.5)
+
+# вызов методов, для записи пунктов отчёта
+# общие показатели
 report.write_general_params()
+# посещение страниц
 report.write_page_views()
+# диаграммы выполнения целевых действий (воронки)
 report.write_funnel_graph_section()
+# анализ выбросов по действиям
 report.write_outliers_section()
+# анализ групп
 report.write_groups_section()
-report.save_report()
+
+# сохранение файла
+report.save_report('auto_report.docx')
