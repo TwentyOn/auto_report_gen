@@ -86,6 +86,7 @@ class FormatterMixin:
             df = df.drop([0])
         # переводим время в число для сравнения
         df.time = df.time.apply(lambda t: (t.hour * 60 + t.minute) * 60 + t.second)
+        df = df[df[label] > 0]
         # квартили распределения
         # если количество элементов больше 2 ищем квартиль на основе медиан
         if len(df[label]) > 2:
@@ -490,12 +491,8 @@ class SectionWriter(FormatterMixin):
             cur_outliers = pos_outliers
             normal = normal.sort_values(by=label, ascending=False)
         else:
-            zeros_df = df[df[label] == 0]
-            if len(zeros_df) >= min_items_num:
-                cur_outliers = zeros_df
-            else:
-                cur_outliers = neg_outliers
-                normal = normal.sort_values(by=label, ascending=True)
+            cur_outliers = neg_outliers
+            normal = normal.sort_values(by=label, ascending=True)
 
         num_items = len(cur_outliers)
         for i in range(num_items):
@@ -736,12 +733,16 @@ class ReportGenerator(FormatterMixin):
         """
         self.document.save(doc_name)
 
+
 if __name__ == '__main__':
     # объект для управления записью отчёта
-    report = ReportGenerator('Моя кампания', 'data/teatri_vov_um/Текущая РК.csv',
-                             'data/teatri_vov_um/Органический трафик.csv',
-                             'data/teatri_vov_um/Группы по типу РК.csv', 'data/teatri_vov_um/Все кампании.csv',
-                             prev_rk_path='data/teatri_vov_um/Предыдущая РК.csv', outlier_rate=1.5)
+    # report = ReportGenerator('Моя кампания', 'data/teatri_vov_um/Текущая РК.csv',
+    #                          'data/teatri_vov_um/Органический трафик.csv',
+    #                          'data/teatri_vov_um/Группы по типу РК.csv', 'data/teatri_vov_um/Все кампании.csv',
+    #                          prev_rk_path='data/teatri_vov_um/Предыдущая РК.csv', outlier_rate=1.5)
+    report = ReportGenerator('Моя кампания', 'data/old_data/Текущая РК.csv', 'data/old_data/Органический трафик.csv',
+                             'data/old_data/Группы по типу РК.csv', 'data/old_data/Все кампании.csv',
+                             prev_rk_path='data/old_data/Предыдущая РК.csv', outlier_rate=5)
 
     # вызов методов, для записи пунктов отчёта
     # общие показатели
