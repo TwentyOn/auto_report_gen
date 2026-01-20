@@ -377,10 +377,11 @@ class SectionWriter(FormatterMixin):
         # ПОСЕЩАЕМОСТЬ
         # замена NaN-значений на 0
         # self.cur_rk_df.fillna(0)
+        zeros_actions = self.cur_rk_df[self.cur_rk_df['views'] == 0]
         for i in range(1, len(self.cur_rk_df)):
             item = self.cur_rk_df.iloc[i].replace(np.nan, 0)
-            p = self.document.add_paragraph(style='List Bullet')
             if item.views != 0:
+                p = self.document.add_paragraph(style='List Bullet')
                 if 'посещен' in item.action.lower():
                     p.add_run('Действие ')
                     p.add_run(f'«{item.action}»').bold = True
@@ -389,7 +390,7 @@ class SectionWriter(FormatterMixin):
                         f'{item.perc_aborted} % доля отказов '
                         f'(относительно визитов); {item.depth} стр. глубина просмотра (в среднем, '
                         f'без учёта отказников); {self.time_to_str(item.time)} время просмотра (в среднем, без учёта отказников); '
-                        f'{item.perc_new_users} % доля новых пользователей (с учётом отказов)')
+                        f'{item.perc_new_users} % доля новых пользователей (с учётом отказов).')
                 else:
                     p.add_run('Действие ')
                     p.add_run(f'«{item.action}»').bold = True
@@ -398,10 +399,12 @@ class SectionWriter(FormatterMixin):
                         f'{item.perc_aborted} % доля отказов '
                         f'(относительно визитов); {item.depth} стр. глубина просмотра (в среднем, '
                         f'без учёта отказников); {self.time_to_str(item.time)} время просмотра (в среднем, без учёта отказников);')
-            else:
-                p.add_run('По действию ')
-                p.add_run(f'«{item.action}» ').bold = True
-                p.add_run('посещений не зафиксировано.')
+
+        p = self.document.add_paragraph(style='List Bullet')
+        p.add_run('По действиям ')
+        p.add_run(f', '.join(f'«{zeros_item}»' for zeros_item in zeros_actions['action'].tolist()))
+        # p.add_run(f'«{item.action}» ').bold = True
+        p.add_run(' посещений не зафиксировано.')
 
     def write_funnel_graph_section(self):
         """
@@ -733,24 +736,24 @@ class ReportGenerator(FormatterMixin):
         """
         self.document.save(doc_name)
 
+if __name__ == '__main__':
+    # объект для управления записью отчёта
+    report = ReportGenerator('Моя кампания', 'data/teatri_vov_um/Текущая РК.csv',
+                             'data/teatri_vov_um/Органический трафик.csv',
+                             'data/teatri_vov_um/Группы по типу РК.csv', 'data/teatri_vov_um/Все кампании.csv',
+                             prev_rk_path='data/teatri_vov_um/Предыдущая РК.csv', outlier_rate=1.5)
 
-# объект для управления записью отчёта
-report = ReportGenerator('Моя кампания', 'data/teatri_vov_um/Текущая РК.csv',
-                         'data/teatri_vov_um/Органический трафик.csv',
-                         'data/teatri_vov_um/Группы по типу РК.csv', 'data/teatri_vov_um/Все кампании.csv',
-                         prev_rk_path='data/teatri_vov_um/Предыдущая РК.csv', outlier_rate=1.5)
+    # вызов методов, для записи пунктов отчёта
+    # общие показатели
+    report.write_general_params()
+    # посещение страниц
+    report.write_page_views()
+    # диаграммы выполнения целевых действий (воронки)
+    report.write_funnel_graph_section()
+    # анализ выбросов по действиям
+    report.write_outliers_section()
+    # анализ групп
+    report.write_groups_section()
 
-# вызов методов, для записи пунктов отчёта
-# общие показатели
-report.write_general_params()
-# посещение страниц
-report.write_page_views()
-# диаграммы выполнения целевых действий (воронки)
-report.write_funnel_graph_section()
-# анализ выбросов по действиям
-report.write_outliers_section()
-# анализ групп
-report.write_groups_section()
-
-# сохранение файла
-report.save_report('auto_report.docx')
+    # сохранение файла
+    report.save_report('auto_report.docx')
