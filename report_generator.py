@@ -171,16 +171,16 @@ class Data:
         self.groups_df = self.read_campaign_csv(groups_path)
         self.campaigns_df = self.read_campaign_csv(campaign_path)
 
-    def read_rk_csv(self, filename: path):
+    def read_rk_csv(self, content: str):
         """
         Чтение данных из csv формата RK_LABELS
         :param filename: путь к файлу
         :return: объект pandas.DataFrame
         """
-        if not filename or not os.path.exists(filename):
+        if not content:
             return pd.DataFrame()
 
-        rk_df = pd.read_csv(filename)
+        rk_df = pd.read_csv(io.StringIO(content))
         if len(rk_df.values[0]) != len(self.RK_LABELS):
             return pd.DataFrame()
         rk_df.columns = self.RK_LABELS
@@ -199,13 +199,13 @@ class Data:
 
         return rk_df
 
-    def read_org_csv(self, filename: path):
+    def read_org_csv(self, content: str):
         """
         Чтение данных из csv формата ORG_LABELS
         :param filename: путь к файлу
         :return: объект pandas.DataFrame
         """
-        org_df = pd.read_csv(filename)
+        org_df = pd.read_csv(io.StringIO(content))
         org_df.columns = self.ORG_LABELS
         org_df.perc_aborted = org_df.perc_aborted.apply(self.percent_formatter)
         org_df.depth = org_df.depth.apply(self.float_formatter)
@@ -214,14 +214,14 @@ class Data:
 
         return org_df
 
-    def read_campaign_csv(self, filename: path):
+    def read_campaign_csv(self, content: str):
         """
         Чтение данных из csv формата CAMPAIGN_LABELS
         :param filename: путь к файлу
         :return: объект pandas.DataFrame
         """
-        if os.path.exists(filename):
-            campaign_df = pd.read_csv(filename)
+        if content:
+            campaign_df = pd.read_csv(io.StringIO(content))
             campaign_df.columns = self.CAMPAIGN_LABELS
 
             campaign_df.perc_aborted = campaign_df.perc_aborted.apply(self.percent_formatter)
@@ -265,10 +265,10 @@ class SectionWriter(FormatterMixin):
     Класс для записи пунктов в формирующийся документ (отчёт)
     """
 
-    def __init__(self, document, cur_rk_df, org_df, prev_rk_df, groups_path, campaigns_path):
+    def __init__(self, document, cur_rk, org, prev_rk, groups, campaigns):
         self.document = document
 
-        data = Data(cur_rk_df, org_df, prev_rk_df, groups_path, campaigns_path)
+        data = Data(cur_rk, org, prev_rk, groups, campaigns)
         self.cur_rk_df = data.cur_rk_df
         self.prev_rk_df = data.prev_rk_df
         self.org_df = data.org_df
@@ -645,8 +645,8 @@ class ReportGenerator(FormatterMixin):
     управляет записью пунктов в документ
     """
 
-    def __init__(self, header: str, cur_rk_path: str, org_path: str, groups_path: str, campaigns_path: str,
-                 prev_rk_path: str = None, outlier_rate: float = 1.5):
+    def __init__(self, header: str, cur_rk: str, org: str, groups: str, campaigns: str,
+                 prev_rk: str = None, outlier_rate: float = 1.5):
         """
 
         :param header: заголовок документа
@@ -658,12 +658,11 @@ class ReportGenerator(FormatterMixin):
         :param outlier_rate: множитель, отвечающий за величину отклонения данных, которые будут считаться выбросом
         """
         self.document = Document()
-        self.general_writer = SectionWriter(self.document, cur_rk_path, org_path, prev_rk_path, groups_path,
-                                            campaigns_path)
+        self.general_writer = SectionWriter(self.document, cur_rk, org, prev_rk, groups, campaigns)
 
         self.outlier_rate = outlier_rate
 
-        self.write_header(header)
+        self.__write_header(header)
         # self.write_general_params()
 
         # настройки форматирования для заголовка
@@ -682,7 +681,7 @@ class ReportGenerator(FormatterMixin):
         list_bullet_font.size = Pt(12)
         list_bullet_font.bold = False
 
-    def write_header(self, header):
+    def __write_header(self, header):
         header_obj = self.document.add_paragraph(style='Normal')
         header_obj.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
         run = header_obj.add_run(f'Выводы по контекстной кампании "{header}"')
@@ -725,7 +724,7 @@ class ReportGenerator(FormatterMixin):
         """
         self.general_writer.write_groups_section(self.outlier_rate)
 
-    def save_report(self, doc_name: str = 'auto_report'):
+    def save_report(self, doc_name: str = 'auto_report.docx'):
         """
         Сохранение файла отчёта
         :param doc_name: имя выходного файла
