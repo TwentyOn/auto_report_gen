@@ -1,5 +1,4 @@
 from sqlalchemy import select, Column, Integer, String, Boolean, ForeignKey, and_
-from sqlalchemy.orm import selectinload, relationship
 
 from database.db import Base, session_maker
 from settings import DB_SCHEME
@@ -14,7 +13,8 @@ class Report(Base):
     filepath = Column(String)
     to_delete = Column(Boolean)
 
-    product = relationship('Product', uselist=False, backref='reports')
+    # product = relationship('Product', uselist=False, backref='reports')
+
 
 class Product(Base):
     __tablename__ = 'product'
@@ -26,5 +26,6 @@ class Product(Base):
 # отладка
 if __name__ == '__main__':
     with session_maker() as session:
-        a = session.execute(select(Report).where(Report.id==114).options(selectinload(Report.product)))
-        print(a.scalar().product)
+        a = session.execute(
+            select(Report.id, Product.name).join(Product, Report.product_id == Product.id).where(Report.id == 114))
+        print(a.all())
