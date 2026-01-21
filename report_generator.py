@@ -4,6 +4,7 @@ import math
 import os.path
 from datetime import timedelta
 from os import path
+import re
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -242,13 +243,19 @@ class Data:
         return round(float(num) * 100, 2)
 
     @staticmethod
-    def str_to_time(t):
+    def str_to_time(t: str):
         """
         Метод форматирует строку, соответствующего формата в объект datetime.time
         :param t:
         :return:
         """
-        return datetime.datetime.strptime(t, '%H:%M:%S').time()
+        t_format = r'\d\d:\d\d:\d\d'
+        if isinstance(t, str) and re.match(t_format, t):
+            return datetime.datetime.strptime(t, '%H:%M:%S').time()
+        else:
+            new_t = datetime.date.today()
+            return datetime.datetime(new_t.year, new_t.month, new_t.day, 0, 0, 0)
+
 
     @staticmethod
     def float_formatter(num):
@@ -401,11 +408,12 @@ class SectionWriter(FormatterMixin):
                         f'(относительно визитов); {item.depth} стр. глубина просмотра (в среднем, '
                         f'без учёта отказников); {self.time_to_str(item.time)} время просмотра (в среднем, без учёта отказников);')
 
-        p = self.document.add_paragraph(style='List Bullet')
-        p.add_run('По действиям ')
-        p.add_run(f', '.join(f'«{zeros_item}»' for zeros_item in zeros_actions['action'].tolist()))
-        # p.add_run(f'«{item.action}» ').bold = True
-        p.add_run(' посещений не зафиксировано.')
+        if not zeros_actions.empty:
+            p = self.document.add_paragraph(style='List Bullet')
+            p.add_run('По действиям ')
+            p.add_run(f', '.join(f'«{zeros_item}»' for zeros_item in zeros_actions['action'].tolist()))
+            # p.add_run(f'«{item.action}» ').bold = True
+            p.add_run(' посещений не зафиксировано.')
 
     def write_funnel_graph_section(self):
         """
