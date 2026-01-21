@@ -13,9 +13,9 @@ DB_PORT = os.getenv('DB_PORT')
 DB_SCHEME = 'campaign_stats'
 
 # Minio
-S3_ENDPOINT_URL = os.getenv('S3_ENDPOINT_URL')
-S3_OUTER_ENDPOINT_URL = os.getenv('S3_OUTER_ENDPOINT_URL')
-S3_ACCESS_KEY = os.getenv('S3_ACCESS_KEY')
-S3_SECRET_KEY = os.getenv('S3_SECRET_KEY')
-S3_BUCKET_NAME = os.getenv('S3_BUCKET_NAME')
-S3_SECURE = os.getenv('S3_SECURE')
+ENDPOINT_URL = os.getenv('S3_ENDPOINT_URL')
+OUTER_ENDPOINT_URL = os.getenv('S3_OUTER_ENDPOINT_URL')
+ACCESS_KEY = os.getenv('S3_ACCESS_KEY')
+SECRET_KEY = os.getenv('S3_SECRET_KEY')
+BUCKET_NAME = os.getenv('S3_BUCKET_NAME')
+SECURE = os.getenv('S3_SECURE')
