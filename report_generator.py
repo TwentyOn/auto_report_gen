@@ -472,6 +472,7 @@ class SectionWriter(FormatterMixin):
 
                 img = io.BytesIO()
                 plt.savefig(img)
+                plt.close(fig)
                 img.seek(0)
                 picture.add_run().add_picture(img, width=Cm(16.2), height=Cm(10.8))
 
