@@ -14,6 +14,8 @@ class Report(Base):
     to_delete = Column(Boolean)
 
 
-with session_maker() as session:
-    a = session.execute(select(Report.id).where(and_(Report.status_id == 2, Report.to_delete == False)))
-    print(a.scalars().all())
+# отладка
+if __name__ == '__main__':
+    with session_maker() as session:
+        a = session.execute(select(Report.id).where(and_(Report.status_id == 2, Report.to_delete == False)))
+        print(a.scalars().all())
