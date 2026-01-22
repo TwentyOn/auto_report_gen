@@ -532,7 +532,7 @@ class SectionWriter(FormatterMixin):
                 p.add_run(
                     f' Данное действие имеет сравнительно высокую долю отказов ({item.perc_aborted} %).')
                 if item.action in pos_outliers_time.action.values:
-                    p.add_run(f' И относительно высокое время просмотра ({item.time}).')
+                    p.add_run(f' Но и относительно высокое время просмотра ({item.time}).')
                 elif item.action in pos_outliers_time.action.values:
                     p.add_run(f' И относительно малое время просмотра ({item.time}).')
 
@@ -543,7 +543,7 @@ class SectionWriter(FormatterMixin):
                 if item.action in pos_outliers_time.action.values:
                     p.add_run(f' И относительно высокое время просмотра ({item.time}).')
                 elif item.action in pos_outliers_time.action.values:
-                    p.add_run(f' Но относительно низкое время просмотра ({item.time}).')
+                    p.add_run(f' Но и относительно низкое время просмотра ({item.time}).')
 
             # если отказыв в пределах нормы, ищем выбросы для данного действия по времени
             elif item.action in pos_outliers_time.action.values:
@@ -566,7 +566,7 @@ class SectionWriter(FormatterMixin):
                     p.add_run(
                         f' Так же, стоит отметить, что данное действие имеет сравнительно высокую долю отказов ({item.perc_aborted} %).')
                     if item.action in pos_outliers_time.action.values:
-                        p.add_run(f' Но сравнительно высокое время просмотра ({item.time}).')
+                        p.add_run(f' Но и сравнительно высокое время просмотра ({item.time}).')
                     elif item.action in pos_outliers_time.action.values:
                         p.add_run(f' И сравнительно низкое время просмотра ({item.time}).')
 
@@ -575,9 +575,9 @@ class SectionWriter(FormatterMixin):
                     p.add_run(
                         f' Так же, стоит отметить, что данное действие имеет сравнительно низкую долю отказов ({item.perc_aborted} %).')
                     if item.action in pos_outliers_time.action.values:
-                        p.add_run(f' И высокое, относительно других действий, время просмотра ({item.time}).')
+                        p.add_run(f' Но высокое, относительно других действий, время просмотра ({item.time}).')
                     elif item.action in pos_outliers_time.action.values:
-                        p.add_run(f' Но низкое, относительно других действий, время просмотра ({item.time}).')
+                        p.add_run(f' И низкое, относительно других действий, время просмотра ({item.time}).')
 
                 # если отказыв в пределах нормы, ищем выбросы для данного действия по времени
                 elif item.action in pos_outliers_time.action.values:
