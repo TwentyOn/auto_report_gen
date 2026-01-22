@@ -2,12 +2,14 @@ import datetime
 import io
 import math
 import os.path
+import textwrap
 from datetime import timedelta
 from os import path
 import re
 
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.colors import Normalize
 import pandas as pd
 
 from docx import Document
@@ -444,31 +446,46 @@ class SectionWriter(FormatterMixin):
             if len(blocks_dict[action]) >= 2:
                 df = self.cur_rk_df[self.cur_rk_df['action'].str.contains(action)].sort_values(by=['views'],
                                                                                                ascending=False)
-                y = [1, 3.6]
-                x1 = [8, 12]
-                x2 = [6, 2]
-
                 fig = plt.figure(figsize=(12, 8))
 
-                for i in range(len(df)):
-                    # cmap = plt.get_cmap('summer')
-                    plt.fill_betweenx(y=y, x1=x1, x2=x2, color=colors[i % 5])
-                    y = [i + 3 for i in y]
-                    x1 = [i + 4.3 for i in x1]
-                    x2 = [i - 4.3 for i in x2]
-                plt.xticks([], [])
-                plt.yticks([i for i in range(2, len(df) * 3, 3)], df["action"].apply(lambda s: s.split(': ')[1])[::-1],
-                           wrap=True, fontsize=18)
+                # код для создания воронок
+                # y = [1, 3.6]
+                # x1 = [8, 12]
+                # x2 = [6, 2]
+                # for i in range(len(df)):
+                #     # cmap = plt.get_cmap('summer')
+                #     plt.fill_betweenx(y=y, x1=x1, x2=x2, color=colors[i % 5])
+                #     y = [i + 3 for i in y]
+                #     x1 = [i + 4.3 for i in x1]
+                #     x2 = [i - 4.3 for i in x2]
+                # plt.xticks([], [])
+                # plt.yticks([i for i in range(2, len(df) * 3, 3)], df["action"].apply(lambda s: s.split(': ')[1])[::-1],
+                #            wrap=True, fontsize=18)
+                #
+                # for y, value in zip([i for i in range(2, len(df) * 3, 3)],
+                #                     df["views"].apply(self.number_formatter)[::-1]):
+                #     plt.text(7.3, y, value, fontsize=17, fontweight="bold", color="white", ha="center")
+                #
+                # # plt.ylabel("Stages")
+                #
+                # plt.title(f'Воронка трафика "{action}"', loc="center", fontsize=18, fontweight="bold", pad=30)
+                # plt.subplots_adjust(left=0.3)
 
-                for y, value in zip([i for i in range(2, len(df) * 3, 3)],
-                                    df["views"].apply(self.number_formatter)[::-1]):
-                    plt.text(7.3, y, value, fontsize=17, fontweight="bold", color="white", ha="center")
+                # код для создания столбчатой диаграммы
+                labels, values = df['action'].apply(lambda s: s.split(': ')[1])[::-1], df['views']
+                plt.title(f'Диаграмма трафика: раздел "{action}"', loc="center", fontsize=18, fontweight="bold", pad=30)
+                plt.subplots_adjust(left=0.2)
+                plt.xticks(fontsize=14)
+                plt.yticks(fontsize=14)
+                plt.xlabel('Посетителей, чел', fontsize=16)
+                norm = Normalize(min(values), max(values))
+                normilized_values = norm(values)
+                wraps_labels = [textwrap.fill(label, width=20) for label in labels]
+                cmap = plt.cm.plasma
+                colors = cmap(normilized_values)
+                plt.barh(wraps_labels, values, color=colors)
 
-                # plt.ylabel("Stages")
-
-                plt.title(f'Воронка трафика "{action}"', loc="center", fontsize=18, fontweight="bold", pad=30)
-                plt.subplots_adjust(left=0.3)
-
+                # сохранение графика
                 img = io.BytesIO()
                 plt.savefig(img)
                 plt.close(fig)
