@@ -256,7 +256,6 @@ class Data:
             new_t = datetime.date.today()
             return datetime.datetime(new_t.year, new_t.month, new_t.day, 0, 0, 0)
 
-
     @staticmethod
     def float_formatter(num):
         """
@@ -733,12 +732,19 @@ class ReportGenerator(FormatterMixin):
         """
         self.general_writer.write_groups_section(self.outlier_rate)
 
-    def save_report(self, doc_name: str = 'auto_report.docx'):
+    def save_report(self, doc_name: str, binary: bool) -> None | io.BytesIO:
         """
         Сохранение файла отчёта
         :param doc_name: имя выходного файла
+        :param binary: вид сохранения - в файловую систему (False) или в ОЗУ (True)
         :return: None
         """
+        if binary:
+            output_file = io.BytesIO()
+            self.document.save(output_file)
+            output_file.name = doc_name
+            output_file.seek(0)
+            return output_file
         self.document.save(doc_name)
 
 
