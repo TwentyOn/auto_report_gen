@@ -12,6 +12,7 @@ class Report(Base):
     status_id = Column(Integer)
     filepath = Column(String)
     to_delete = Column(Boolean)
+    content_report_filepath = Column(String)
 
     # product = relationship('Product', uselist=False, backref='reports')
 
