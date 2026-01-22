@@ -132,11 +132,11 @@ class Processor:
         raise error
 
 
-def main_cycle(target_status_id: int, succes_status_id: int):
+def main_cycle(target_status_id: int, success_status_id: int):
     """
     Бесконечный цикл ожидающий новых запросов на обработку
     :param target_status_id: целевой статус для взятия запроса в обработку
-    :param succes_status_id: статус, устанавливаемый для запросов в случае успешной обработки
+    :param succses_status_id: статус, устанавливаемый для запросов в случае успешной обработки
     :return:
     """
     while True:
@@ -152,14 +152,14 @@ def main_cycle(target_status_id: int, succes_status_id: int):
                     s3_filepath = processor.process_report(report_id, header)
 
                     session.execute(update(Report).
-                                    values(content_report_filepath=s3_filepath).
+                                    values(content_report_filepath=s3_filepath, status_id=success_status_id).
                                     where(Report.id == report_id))
+                    session.commit()
                     logger.info(f'Обработка отчета [{report[0]}] завершена')
 
                 except Exception as err:
                     corrupted_count += 1
                     errors[str(report_id)] = str(err)
-            session.commit()
             logger.info('Обработка завершена')
         if corrupted_count:
             print(f'{corrupted_count}/{len(reports)} отчетов не удалось создать:')
@@ -171,4 +171,4 @@ def main_cycle(target_status_id: int, succes_status_id: int):
 
 
 if __name__ == '__main__':
-    main_cycle(2, 2)
+    main_cycle(2, 5)
