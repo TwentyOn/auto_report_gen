@@ -166,7 +166,7 @@ def main_cycle(target_status_id: int, success_status_id: int):
             for k, v in errors.items():
                 print('Отчет ' + k + ': ' + v)
 
-        print('спим 60 сек')
+        print('Новый поиск запросов через 60 сек...')
         time.sleep(60)
 
 
