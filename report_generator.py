@@ -482,12 +482,13 @@ class SectionWriter(FormatterMixin):
                 plt.xticks(fontsize=14)
                 plt.yticks(fontsize=14)
                 plt.xlabel('Посетителей, чел', fontsize=16)
-                norm = Normalize(min(values), max(values))
-                normilized_values = norm(values)
+                # градиентная окраска столбцов в зависимости от величины значений
+                # norm = Normalize(min(values), max(values))
+                # normilized_values = norm(values)
+                # cmap = plt.cm.plasma
+                # colors = cmap(normilized_values)
                 wraps_labels = [textwrap.fill(label, width=19) for label in labels]
-                cmap = plt.cm.plasma
-                colors = cmap(normilized_values)
-                plt.barh(wraps_labels, values, color=colors)
+                plt.barh(wraps_labels, values, color='skyblue')
 
                 # сохранение графика
                 img = io.BytesIO()
