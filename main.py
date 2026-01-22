@@ -1,7 +1,9 @@
 import logging
 from typing import Sequence
+import time
+import io
 
-from sqlalchemy import select, and_, Row
+from sqlalchemy import select, update, and_, Row
 from sqlalchemy.orm import Session
 
 from database.db import session_maker
@@ -17,11 +19,12 @@ class Processor:
     def __init__(self, session: Session):
         self.session: Session = session
         self.csv_path_template = 'products_report_generator/{{REPORT_ID}}/csv_exports/'
+        self.docx_report_path_template = 'products_report_generator/{{REPORT_ID}}/docx_report/'
         self.target_files = {'текущая рк.csv': 'cur_rk', 'органический трафик.csv': 'org',
                              'группы по типу рк.csv': 'groups',
                              'все кампании.csv': 'campaigns', 'предыдущая рк.csv': 'prev_rk'}
 
-    def get_reports(self) -> Sequence[Row[tuple]]:
+    def get_reports(self, target_status_id: int) -> Sequence[Row[tuple]]:
         """
         Метод получает идентификаторы запросов для формирования отчетов из БД
         :return: список идентификаторов
@@ -30,7 +33,7 @@ class Processor:
         stmt = (
             select(Report.id, Product.name).
             join(Product, Report.product_id == Product.id).
-            where(and_(Report.status_id == 2, Report.to_delete == False))
+            where(and_(Report.status_id == target_status_id, Report.to_delete == False))
         )
 
         reports_to_process = self.session.execute(stmt).all()
@@ -41,7 +44,7 @@ class Processor:
         logger.info(f'Обработка отчета [{report_id}]...')
         data = self.get_data_content(report_id)
         if not data:
-            return
+            raise IOError('Нет данных для создания отчета')
         data['header'] = header
         data['outlier_rate'] = outlier_rate
 
@@ -52,9 +55,11 @@ class Processor:
         new_report.write_funnel_graph_section()
         new_report.write_outliers_section()
         new_report.write_groups_section()
-        new_report.save_report(f'reports/test{report_id}.docx')
+        file = new_report.save_report(f'Отчет_{header.replace(" ", "_")}_{report_id}.docx', binary=True)
         logger.info('Файл сформирован')
-        return True
+        logger.info('Отправка файла в хранилище...')
+        s3_filepath = self.upload_to_s3(file, file.name, report_id)
+        return s3_filepath
 
     def get_data_content(self, report_id: int) -> dict | None:
         """
@@ -102,25 +107,68 @@ class Processor:
                     raise err
                 logger.info(f'Попытка скачивания {retry + 1}...')
 
+    def upload_to_s3(self, file: io.BytesIO, file_name: str, report_id: int):
+        """
+        Отправляет файл в S3-хранилище
+        :param minio_client:
+        :param file:
+        :param file_name: имя файла - критически важно чтобы содержало ID отчёта для которого файл создан (19/filename.docx)
+        :return:
+        """
+        error = None
+        for _ in range(3):
+            try:
+                s3_report_path = self.docx_report_path_template.replace('{{REPORT_ID}}', str(report_id))
+                output_path = ''.join((s3_report_path, file_name))
+                storage.upload_memory_file(output_path, file, len(file.getvalue()))
+                print(f'Файл отправлен в хранилище: {output_path}')
+                return output_path
+            except Exception as e:
+                print(f'Ошибка отправки отчёта (попытка {_ + 1}) {file_name} в хранилище: {e}')
+                error = e
+                file.seek(0)
+                continue
+        print('Критическая ошибка отправки отчёта')
+        raise error
 
-# if __name__ == '__main__':
-#     while True:
-#         with session_maker() as session:
-#             processor = Processor(session)
-#             reports_to_process = pr(session)
-#
-#         print('спим 60 сек')
-#         time.sleep(60)
 
-corrupted_count = 0
-with session_maker() as session:
-    processor = Processor(session)
-    # processor.process_report(101, 1.5)
-    reports = processor.get_reports()
-    for report in reports:
-        succues = processor.process_report(report[0], report[1])
-        if not succues:
-            corrupted_count += 1
-        logger.info(f'Обработка отчета [{report[0]}] завершена')
+def main_cycle(target_status_id: int, succes_status_id: int):
+    """
+    Бесконечный цикл ожидающий новых запросов на обработку
+    :param target_status_id: целевой статус для взятия запроса в обработку
+    :param succes_status_id: статус, устанавливаемый для запросов в случае успешной обработки
+    :return:
+    """
+    while True:
+        corrupted_count = 0
+        errors = {}
+        with session_maker() as session:
+            processor = Processor(session)
+            reports = processor.get_reports(target_status_id)
 
-    logger.info(f'{corrupted_count} отчетов не удалось создать')
+            for report in reports:
+                try:
+                    report_id, header = report[0], report[1]
+                    s3_filepath = processor.process_report(report_id, header)
+
+                    session.execute(update(Report).
+                                    values(content_report_filepath=s3_filepath).
+                                    where(Report.id == report_id))
+                    logger.info(f'Обработка отчета [{report[0]}] завершена')
+
+                except Exception as err:
+                    corrupted_count += 1
+                    errors[str(report_id)] = str(err)
+            session.commit()
+            logger.info('Обработка завершена')
+        if corrupted_count:
+            print(f'{corrupted_count}/{len(reports)} отчетов не удалось создать:')
+            for k, v in errors.items():
+                print('Отчет ' + k + ': ' + v)
+
+        print('спим 60 сек')
+        time.sleep(60)
+
+
+if __name__ == '__main__':
+    main_cycle(2, 2)
