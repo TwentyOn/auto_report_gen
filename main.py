@@ -154,12 +154,13 @@ def main_cycle(target_status_id: int, success_status_id: int):
                     session.execute(update(Report).
                                     values(content_report_filepath=s3_filepath, status_id=success_status_id).
                                     where(Report.id == report_id))
-                    session.commit()
                     logger.info(f'Обработка отчета [{report[0]}] завершена')
 
                 except Exception as err:
                     corrupted_count += 1
                     errors[str(report_id)] = str(err)
+            if reports:
+                session.commit()
             logger.info('Обработка завершена')
         if corrupted_count:
             print(f'{corrupted_count}/{len(reports)} отчетов не удалось создать:')
