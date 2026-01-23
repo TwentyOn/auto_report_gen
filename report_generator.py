@@ -199,7 +199,6 @@ class Data:
         rk_df.time = rk_df.time.apply(self.str_to_time)
         rk_df.perc_new_users = rk_df.perc_new_users.apply(self.percent_formatter)
         rk_df.perc_new_users_with_abort = rk_df.perc_new_users_with_abort.apply(self.percent_formatter)
-        rk_df.sort_values(by='views')
 
         return rk_df
 
@@ -215,7 +214,6 @@ class Data:
         org_df.depth = org_df.depth.apply(self.float_formatter)
         org_df.time = org_df.time.apply(self.str_to_time)
         org_df.perc_new_users = org_df.perc_new_users.apply(self.percent_formatter)
-        org_df.sort_values(by='views')
 
         return org_df
 
@@ -234,7 +232,6 @@ class Data:
             campaign_df.time = campaign_df.time.apply(self.str_to_time)
             campaign_df.perc_new_users = campaign_df.perc_new_users.apply(self.percent_formatter)
             campaign_df.perc_new_users_with_abort = campaign_df.perc_new_users_with_abort.apply(self.percent_formatter)
-            campaign_df.sort_values(by='views')
 
             return campaign_df
 
@@ -390,9 +387,9 @@ class SectionWriter(FormatterMixin):
         # замена NaN-значений на 0
         # self.cur_rk_df.fillna(0)
         zeros_actions = self.cur_rk_df[self.cur_rk_df['views'] == 0]
-        self.cur_rk_df = self.cur_rk_df.sort_values(by='views', ascending=False)
-        for i in range(1, len(self.cur_rk_df)):
-            item = self.cur_rk_df.iloc[i].replace(np.nan, 0)
+        cur_df = self.cur_rk_df.sort_values(by='views', ascending=False)
+        for i in range(1, len(cur_df)):
+            item = cur_df.iloc[i].replace(np.nan, 0)
             if item.views != 0:
                 p = self.document.add_paragraph(style='List Bullet')
                 if 'посещен' in item.action.lower():
@@ -448,8 +445,7 @@ class SectionWriter(FormatterMixin):
 
         for action in blocks_dict:
             if len(blocks_dict[action]) >= 2:
-                df = self.cur_rk_df[self.cur_rk_df['action'].str.contains(action)].sort_values(by=['views'],
-                                                                                               ascending=False)
+                df = self.cur_rk_df[self.cur_rk_df['action'].str.contains(action)]
                 fig = plt.figure(figsize=(12, 8))
 
                 # код для создания воронок
