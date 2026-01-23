@@ -1,17 +1,14 @@
 import datetime
 import io
 import math
-import os.path
 import textwrap
 from datetime import timedelta
-from os import path
 import re
 
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize
 import pandas as pd
-
 from docx import Document
 from docx.shared import Inches, Pt, Cm
 from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_BREAK
