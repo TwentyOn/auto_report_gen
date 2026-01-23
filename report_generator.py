@@ -393,19 +393,21 @@ class SectionWriter(FormatterMixin):
                     p.add_run('Действие ')
                     p.add_run(f'«{item.action}»').bold = True
                     p.add_run(
-                        f' {item.views} {self.end_word_formatter("views", item.views)}; {item.conv_views} % конверсия посетителей из лендинга; '
-                        f'{item.perc_aborted} % доля отказов '
-                        f'(относительно визитов); {item.depth} стр. глубина просмотра (в среднем, '
-                        f'без учёта отказников); {self.time_to_str(item.time)} время просмотра (в среднем, без учёта отказников); '
-                        f'{item.perc_new_users} % доля новых пользователей (с учётом отказов).')
+                        f' привлекло {item.views} {self.end_word_formatter("views", item.views)}. '
+                        f'Конверсия посетителей из лендинга составила {item.conv_views} % '
+                        f'а доля отказов {item.perc_aborted} % '
+                        f'(относительно визитов). Глубина просмотра равна {item.depth} стр. (в среднем, '
+                        f'без учёта отказников), время просмотра {self.time_to_str(item.time)} (в среднем, без учёта отказников). '
+                        f'Доля новых пользователей (с учётом отказов) {item.perc_new_users} %.')
                 else:
                     p.add_run('Действие ')
                     p.add_run(f'«{item.action}»').bold = True
                     p.add_run(
-                        f' {item.views} {self.end_word_formatter("views", item.views)}; {item.conv_views} % конверсия посетителей; '
-                        f'{item.perc_aborted} % доля отказов '
-                        f'(относительно визитов); {item.depth} стр. глубина просмотра (в среднем, '
-                        f'без учёта отказников); {self.time_to_str(item.time)} время просмотра (в среднем, без учёта отказников);')
+                        f' привлекло {item.views} {self.end_word_formatter("views", item.views)}. '
+                        f'Конверсия посетителей составила {item.conv_views} % '
+                        f'а доля отказов {item.perc_aborted} % '
+                        f'(относительно визитов). Глубина просмотра равна {item.depth} стр. (в среднем, '
+                        f'без учёта отказников), время просмотра {self.time_to_str(item.time)} (в среднем, без учёта отказников);')
 
         if not zeros_actions.empty:
             p = self.document.add_paragraph(style='List Bullet')
