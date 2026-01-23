@@ -1,5 +1,10 @@
-FROM python3:11-slim as builder
+FROM python:3.11-alpine AS builder
+
+# зависимости для установки psycopg2
+RUN apk add --no-cache build-base libpq libpq-dev
+
 WORKDIR /app
-COPY requiremets.txt .
-RUN pip install -r --no-cache-dir -r requiremets.txt
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
+CMD ["python", "main.py"]
