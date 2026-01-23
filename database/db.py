@@ -10,5 +10,5 @@ class Base(DeclarativeBase):
     __table_args__ = {'schema': DB_SCHEME}
 
 
-engine = create_engine(DATABASE_URL, echo=True)
+engine = create_engine(DATABASE_URL)
 session_maker = sessionmaker(bind=engine)
