@@ -172,3 +172,6 @@ def main_cycle(target_status_id: int, success_status_id: int):
 
 if __name__ == '__main__':
     main_cycle(2, 5)
+    # with session_maker() as session:
+    #     pr = Processor(session)
+    #     pr.process_report(108, 'test', 1.5)
