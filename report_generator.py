@@ -646,7 +646,8 @@ class SectionWriter(FormatterMixin):
                 f'«{group_item1.action}» привлекла {self.number_formatter(group_item1.views)} '
                 f'{self.end_word_formatter("views", group_item1.views)} '
                 f'({self.number_formatter(group_item1.views)}) и имеет '
-                f'{group_item1.perc_aborted} % отказников {self.time_to_str(group_item1.time)}'
+                f'{group_item1.perc_aborted} % отказников а среднее время '
+                f'просмотра составило {self.time_to_str(group_item1.time)}'
             )
         else:
             min_items_count = math.ceil(len(self.groups_df) * 0.25)
