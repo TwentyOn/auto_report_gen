@@ -471,7 +471,7 @@ class SectionWriter(FormatterMixin):
                 # plt.subplots_adjust(left=0.3)
 
                 # код для создания столбчатой диаграммы
-                labels, values = df['action'].apply(lambda s: s.split(': ')[1])[::-1], df['views']
+                labels, values = df['action'].apply(lambda s: ': '.join(s.split(': ')[1:]))[::-1], df['views']
                 plt.title(f'Диаграмма трафика: раздел "{action}"', loc="center", fontsize=18, fontweight="bold", pad=30)
                 plt.subplots_adjust(left=0.2)
                 plt.xticks(fontsize=14)
@@ -482,8 +482,18 @@ class SectionWriter(FormatterMixin):
                 # normilized_values = norm(values)
                 # cmap = plt.cm.plasma
                 # colors = cmap(normilized_values)
-                wraps_labels = [textwrap.fill(label, width=19) for label in labels]
-                plt.barh(wraps_labels, values, color='skyblue')
+
+                annotation = None
+
+                if len(labels) <= 6:
+                    wraps_labels = [textwrap.fill(label, width=19) for label in labels]
+                    plt.barh(wraps_labels, values, color='skyblue')
+
+                # если слишком много элементов, метки не влезают. Поэтому решил делать аннотацию под рисунком
+                else:
+                    annotation = '; '.join([f"{i+1} - {labels.tolist()[i]}" for i in range(len(labels))])
+                    num_labels = [str(i + 1) for i in range(len(labels))]
+                    plt.barh(num_labels[::-1], values, color='skyblue')
 
                 # сохранение графика
                 img = io.BytesIO()
@@ -491,7 +501,8 @@ class SectionWriter(FormatterMixin):
                 plt.close(fig)
                 img.seek(0)
                 picture.add_run().add_picture(img, width=Cm(16.2), height=Cm(10.8))
-        p3.add_run().add_break(WD_BREAK.PAGE)
+                if annotation:
+                    picture.add_run('; '.join([f"{i+1} - {labels.tolist()[i]}" for i in range(len(labels))]))
 
     def write_items_by_outliers(self, min_items_num: int, df: pd.DataFrame, label: str, is_campaign: bool,
                                 outlier_rate: float, write_best: bool = True):
