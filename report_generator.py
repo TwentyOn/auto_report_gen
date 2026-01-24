@@ -485,7 +485,7 @@ class SectionWriter(FormatterMixin):
 
                 annotation = None
 
-                if len(labels) <= 6:
+                if len(labels) <= 6 or len(''.join(labels)) <= 200:
                     wraps_labels = [textwrap.fill(label, width=19) for label in labels]
                     plt.barh(wraps_labels, values, color='skyblue')
 
