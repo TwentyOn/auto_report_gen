@@ -436,7 +436,7 @@ class SectionWriter(FormatterMixin):
             else:
                 blocks_dict[block_name].append(action)
 
-        colors = ["#a9d18e", "#ffc000", "#ed7d31", "#5b9bd5", "#4472c4"]
+        # colors = ["#a9d18e", "#ffc000", "#ed7d31", "#5b9bd5", "#4472c4"]
         if not [1 for item in blocks_dict.values() if len(item) > 2]:
             picture.paragraph_format.left_indent = Inches(0.5)
             picture.add_run('Недостаточно данных для построения диаграмм.').italic = True
@@ -491,6 +491,7 @@ class SectionWriter(FormatterMixin):
                 plt.close(fig)
                 img.seek(0)
                 picture.add_run().add_picture(img, width=Cm(16.2), height=Cm(10.8))
+        p3.add_run().add_break(WD_BREAK.PAGE)
 
     def write_items_by_outliers(self, min_items_num: int, df: pd.DataFrame, label: str, is_campaign: bool,
                                 outlier_rate: float, write_best: bool = True):
