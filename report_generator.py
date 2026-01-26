@@ -1,6 +1,7 @@
 import datetime
 import io
 import math
+import os
 import textwrap
 from datetime import timedelta
 import re
@@ -444,7 +445,7 @@ class SectionWriter(FormatterMixin):
 
         for action in blocks_dict:
             if len(blocks_dict[action]) >= 2:
-                df = self.cur_rk_df[self.cur_rk_df['action'].str.contains(action)]
+                df = self.cur_rk_df[self.cur_rk_df['action'].str.contains(action + ':')]
                 fig = plt.figure(figsize=(12, 8))
 
                 # код для создания воронок
@@ -785,15 +786,21 @@ class ReportGenerator(FormatterMixin):
 
 
 if __name__ == '__main__':
-    # объект для управления записью отчёта
-    # report = ReportGenerator('Моя кампания', 'data/teatri_vov_um/Текущая РК.csv',
-    #                          'data/teatri_vov_um/Органический трафик.csv',
-    #                          'data/teatri_vov_um/Группы по типу РК.csv', 'data/teatri_vov_um/Все кампании.csv',
-    #                          prev_rk_path='data/teatri_vov_um/Предыдущая РК.csv', outlier_rate=1.5)
-    report = ReportGenerator('Моя кампания', 'data/old_data/Текущая РК.csv', 'data/old_data/Органический трафик.csv',
-                             'data/old_data/Группы по типу РК.csv', 'data/old_data/Все кампании.csv',
-                             prev_rk_path='data/old_data/Предыдущая РК.csv', outlier_rate=5)
-
+    hash_names = {
+        'Все кампании.csv': 'campaigns',
+        'Группы по типу РК.csv': 'groups',
+        'Органический трафик.csv': 'org',
+        'Предыдущая РК.csv': 'prev_rk',
+        'Текущая РК.csv': 'cur_rk'
+    }
+    data = {}
+    for f in os.scandir('example/input_data/'):
+        with open(f, encoding='utf-8') as f:
+            key = hash_names[f.name.split('/')[-1]]
+            data[key] = f.read()
+    data['header'] = 'тестовая кампания'
+    data['outlier_rate'] = 1.5
+    report = ReportGenerator(**data)
     # вызов методов, для записи пунктов отчёта
     # общие показатели
     report.write_general_params()
@@ -807,4 +814,4 @@ if __name__ == '__main__':
     report.write_groups_section()
 
     # сохранение файла
-    report.save_report('auto_report.docx')
+    report.save_report('auto_report.docx', binary=False)
