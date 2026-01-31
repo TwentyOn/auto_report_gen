@@ -91,16 +91,19 @@ windows power shell:
 2. База данных
    - образ postgres:17.4
    - для сохранения данных между запусками используется том (volume) pg_data
+   - при запуске docker-compose автоматически инициализируется MVP-архитектура 
+   БД описанная в скрипте [campaign_stats.sql](campaign_stats.sql)
 3. MinIo хранилище
    - образ quay.io/minio/minio (официальный образ MinIO)
    - для сохранения данных между запусками используется том minio_data
 
-А так же написан простой скрипт для загрузки демонстрационых файлов с данными
-[load_data.py](load_data.py)
-
 Запуск: ```docker compose up```
 
-Загрузка демонстрационных данных в хранилище: локально запустить файл load_data.py:
+Загрузка тестовых данных в хранилище: для загрузки вводных файлов с 
+данными можно воспользоваться скриптом [load_data.py](load_data.py):
 ```python load_data.py```
+
+Выходной файл с отчетом загружается по пути, определенному в инициализаторе класса
+Processor, переменной docx_report_path_template (по-умолчанию = products_report_generator/{{REPORT_ID}}/docx_report/)
 
 Остановка: ```docker compose stop```
