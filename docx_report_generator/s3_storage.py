@@ -2,7 +2,7 @@ from datetime import timedelta
 from io import BytesIO
 import logging
 
-from settings import (
+from docx_report_generator.settings import (
     ACCESS_KEY,
     BUCKET_NAME,
     ENDPOINT_URL,
@@ -12,19 +12,22 @@ from settings import (
 )
 from minio import Minio
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 
 class MyStorage:
     def __init__(self, endpoint: str, access_key: str, secret_key: str, bucket_name: str, secure: bool = False):
         self.client = Minio(
+            # endpoint='127.0.0.1:9000', # раскоментировать если требуется запустить скрипт load_data.py
             endpoint=endpoint,
             access_key=access_key,
             secret_key=secret_key,
             secure=secure,  # отключение подключения по HTTPS
         )
         self.bucket_name = bucket_name
-        print("Подключение к хранилищу успешно")
+        if not self.client.bucket_exists(self.bucket_name):
+            self.client.make_bucket(self.bucket_name)
+        logger.info("Подключение к хранилищу успешно")
 
     def upload_file(self, file_name: str, file_path: str):
         """
