@@ -18,7 +18,6 @@ logger = logging.getLogger(__name__)
 class MyStorage:
     def __init__(self, endpoint: str, access_key: str, secret_key: str, bucket_name: str, secure: bool = False):
         self.client = Minio(
-            # endpoint='127.0.0.1:9000', # раскоментировать если требуется запустить скрипт load_data.py
             endpoint=endpoint,
             access_key=access_key,
             secret_key=secret_key,
